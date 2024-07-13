@@ -1,6 +1,7 @@
 import cv2
 import time
 from ultralytics import YOLO
+from picamera2 import Picamera2
 import subprocess
 
 # Load the YOLOv8 model
@@ -9,11 +10,25 @@ model = YOLO('best_model_2.pt')
 target_class_name = 14
 
 # Initialize the camera
-camera = cv2.VideoCapture(0)  # Change 0 to the camera index
+dispW = 800
+dispH = 800
+
+picam2 = Picamera2()
+picam2.preview_configuration.main.size = (dispW, dispH)
+picam2.preview_configuration.main.format = 'RGB888'
+picam2.preview_configuration.align()
+picam2.configure("preview")
+picam2.start()
+
+webCam = '/dev/video2'
+cam = cv2.VideoCapture(webCam)
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, dispW)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, dispH)
+cam.set(cv2.CAP_PROP_FPS, 30)
 
 def detect_birds():
     while True:
-        ret, frame = camera.read()
+        ret, frame = cam.read()
         if not ret:
             break
         
@@ -21,7 +36,6 @@ def detect_birds():
         i=-1
         for box in results:
             i+=1
-            # x1, y1, x2, y2 = box.boxes.xyxy[0]
             class_name = box.boxes.cls
             conf = box.boxes.conf
             print(class_name)
